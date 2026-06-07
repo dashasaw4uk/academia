@@ -1,13 +1,13 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Академія Руху CRM</title>
+<title>Академія Руху CRM</title> 
 
 <style>
 body{
-  font-family:Arial;
+  font-family:Arial, sans-serif;
   margin:0;
   background:#f4f6f8;
   color:#222;
@@ -94,6 +94,8 @@ th,td{
 /* BUTTONS */
 button{
   font-size:14px;
+  padding:8px 12px;
+  cursor:pointer;
 }
 
 button.action{
@@ -101,39 +103,36 @@ button.action{
   font-size:12px;
 }
 
+.freeze-box {
+  margin-top: 10px;
+  background: #f9f9f9;
+  padding: 10px;
+  border-left: 3px solid #34495e;
+}
+
 /* MOBILE ADAPTATION */
 @media (max-width: 768px){
-
   .container{
     flex-direction:column;
   }
-
   nav{
     width:100%;
     display:flex;
     overflow-x:auto;
   }
-
   nav button{
     flex:1;
     margin:5px;
     white-space:nowrap;
   }
-
   main{
     padding:10px;
   }
-
   header{
     font-size:16px;
   }
-
   .card{
     padding:12px;
-  }
-
-  th,td{
-    font-size:12px;
   }
 }
 </style>
@@ -154,7 +153,6 @@ button.action{
 
 <main>
 
-<!-- DASHBOARD -->
 <div id="dashboard" class="view">
 <div class="card">
 <h2>Dashboard</h2>
@@ -163,7 +161,9 @@ button.action{
 
 <div class="card">
 <h3>Сьогодні відсутні</h3>
-<div id="todayAbsent"></div>
+<label for="dashboardAbsentDate" style="font-size:13px; color:#555;">Оберіть дату для перевірки:</label>
+<input type="date" id="dashboardAbsentDate" onchange="renderAbsentVisitors()">
+<div id="todayAbsent" style="margin-top:10px; font-weight:bold;"></div>
 </div>
 
 <div class="card">
@@ -172,12 +172,9 @@ button.action{
 </div>
 </div>
 
-<!-- VISITORS -->
 <div id="visitors" class="view" style="display:none">
-
 <div class="card">
 <h2>Додати відвідувача</h2>
-
 <input id="v_name" placeholder="Ім'я">
 <input id="v_surname" placeholder="Прізвище">
 
@@ -207,9 +204,7 @@ button.action{
 </div>
 </div>
 
-<!-- TRAINERS -->
 <div id="trainers" class="view" style="display:none">
-
 <div class="card">
 <h2>Тренери</h2>
 <input id="t_name" placeholder="Ім'я тренера">
@@ -221,16 +216,13 @@ button.action{
 </div>
 </div>
 
-<!-- CALENDAR -->
 <div id="calendar" class="view" style="display:none">
-
 <div class="card">
-<h2>Перевірка відсутніх</h2>
+<h2>Перевірка відсутніх (Календар)</h2>
 <input type="date" id="checkDate">
 <button onclick="checkAbsent()">Показати</button>
-<div id="calendarResult"></div>
+<div id="calendarResult" style="margin-top:10px;"></div>
 </div>
-
 </div>
 
 </main>
@@ -239,6 +231,10 @@ button.action{
 <script>
 let visitors = JSON.parse(localStorage.getItem("visitors")||"[]");
 let trainers = JSON.parse(localStorage.getItem("trainers")||"[]");
+
+// Встановлюємо сьогоднішню дату в інпут на головній при завантаженні сторінки
+const todayISO = new Date().toISOString().slice(0,10);
+document.getElementById("dashboardAbsentDate").value = todayISO;
 
 function save(){
 localStorage.setItem("visitors",JSON.stringify(visitors));
@@ -264,28 +260,29 @@ function renderTrainers(){
 let sel1=document.getElementById("v_trainer1");
 let sel2=document.getElementById("v_trainer2");
 
-sel1.innerHTML="<option>Різні</option>";
-sel2.innerHTML="<option>Різні</option>";
-
-trainers.forEach(t=>{
-sel1.innerHTML+=`<option>${t.name}</option>`;
-sel2.innerHTML+=`<option>${t.name}</option>`;
-});
+if(sel1 && sel2) {
+  sel1.innerHTML="<option>Різні</option>";
+  sel2.innerHTML="<option>Різні</option>";
+  trainers.forEach(t=>{
+    sel1.innerHTML+=`<option>${t.name}</option>`;
+    sel2.innerHTML+=`<option>${t.name}</option>`;
+  });
+}
 
 document.getElementById("trainerList").innerHTML =
 trainers.map(t=>`<div class="card">${t.name}</div>`).join("");
 }
 
-function renderSchedule(){
+function initSchedule(){
 let days=["Пн","Вт","Ср","Чт","Пт","Сб","Нд"];
 let box=document.getElementById("scheduleBox");
 box.innerHTML="";
 
 days.forEach(d=>{
 box.innerHTML+=`
-<div>
-<label><input type="checkbox" class="sch" value="${d}"> ${d}</label>
-<input id="time_${d}" placeholder="час">
+<div style="display:flex; align-items:center; gap:10px; margin-bottom:5px;">
+<label style="width:50px;"><input type="checkbox" class="sch" value="${d}"> ${d}</label>
+<input id="time_${d}" placeholder="час" style="margin:0; padding:5px;">
 </div>`;
 });
 }
@@ -300,7 +297,19 @@ arr.push({day:s.value,time:document.getElementById("time_"+s.value).value});
 return arr;
 }
 
+function clearVisitorForm() {
+document.getElementById("v_name").value = "";
+document.getElementById("v_surname").value = "";
+document.querySelectorAll(".sch").forEach(s => s.checked = false);
+let days=["Пн","Вт","Ср","Чт","Пт","Сб","Нд"];
+days.forEach(d => document.getElementById("time_"+d).value = "");
+}
+
 function addVisitor(){
+if(!v_name.value || !v_surname.value) {
+  alert("Будь ласка, заповніть ім'я та прізвище");
+  return;
+}
 visitors.push({
 id:Date.now(),
 name:v_name.value,
@@ -313,6 +322,7 @@ schedule:getSchedule(),
 freezes:[]
 });
 save();
+clearVisitorForm();
 renderAll();
 }
 
@@ -322,46 +332,74 @@ visitors.map(v=>`
 <div class="card">
 <b>${v.name} ${v.surname}</b><br>
 ${v.type} | ${v.format}<br>
-<button onclick="freeze(${v.id})">Заморозка</button>
+<div class="freeze-box">
+  <small>Додати заморозку:</small><br>
+  З: <input type="date" id="fr_from_${v.id}" style="width:auto; padding:3px;"> 
+  По: <input type="date" id="fr_to_${v.id}" style="width:auto; padding:3px;">
+  <button class="action" onclick="saveFreeze(${v.id})">Зберегти</button>
+</div>
 </div>
 `).join("");
 }
 
-function freeze(id){
-let from=prompt("З дати");
-let to=prompt("По дату");
-let v=visitors.find(x=>x.id==id);
-if(v){v.freezes.push({from,to});save();renderAll();}
+function saveFreeze(id) {
+let from = document.getElementById(`fr_from_${id}`).value;
+let to = document.getElementById(`fr_to_${id}`).value;
+
+if(!from || !to) {
+  alert("Оберіть обидві Maz-дати!");
+  return;
+}
+
+let v = visitors.find(x=>x.id==id);
+if(v){
+  v.freezes.push({from, to});
+  save();
+  renderAll();
+  alert(`Заморозку для ${v.name} успішно додано!`);
+}
 }
 
 function isFrozen(v,date){
+if(!date) return false;
 return v.freezes.some(f=>date>=f.from && date<=f.to);
 }
 
 function checkAbsent(){
 let d=document.getElementById("checkDate").value;
-document.getElementById("calendarResult").innerHTML =
-visitors.filter(v=>isFrozen(v,d))
-.map(v=>v.name+" "+v.surname).join("<br>");
+if(!d) {
+  document.getElementById("calendarResult").innerHTML = "Оберіть дату";
+  return;
+}
+let list = visitors.filter(v=>isFrozen(v,d));
+document.getElementById("calendarResult").innerHTML = list.length 
+? list.map(v=>`• ${v.name} ${v.surname}`).join("<br>") 
+: "У цей день відсутніх немає.";
+}
+
+function renderAbsentVisitors() {
+let selectedDate = document.getElementById("dashboardAbsentDate").value;
+let absentList = visitors.filter(v=>isFrozen(v, selectedDate));
+
+document.getElementById("todayAbsent").innerHTML = absentList.length 
+? absentList.map(v=>`• ${v.name} ${v.surname}`).join("<br>")
+: "Немає відсутніх на вибрану дату.";
 }
 
 function renderDashboard(){
-let today=new Date().toISOString().slice(0,10);
 document.getElementById("stats").innerHTML=
 `Відвідувачів: ${visitors.length}<br>Тренерів: ${trainers.length}`;
-
-document.getElementById("todayAbsent").innerHTML =
-visitors.filter(v=>isFrozen(v,today))
-.map(v=>v.name+" "+v.surname).join("<br>");
+renderAbsentVisitors();
 }
 
 function renderAll(){
 renderTrainers();
-renderSchedule();
 renderVisitors();
 renderDashboard();
 }
 
+// Ініціалізація структури тижнів (викликаємо лише один раз при старті)
+initSchedule();
 renderAll();
 </script>
 
