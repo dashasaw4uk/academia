@@ -219,6 +219,38 @@ function addVisitor(){
   }
 
   // Отримуємо вибраних тренерів з мультиселекту
+  let selectEl = document.getElementById("v_trainers");
+  let selectedTrainers = [];
+  
+  if (selectEl && selectEl.selectedOptions.length > 0) {
+    selectedTrainers = Array.from(selectEl.selectedOptions).map(opt => opt.value);
+  }
+
+  if(selectedTrainers.length > 2) {
+    alert("Можна обрати не більше 2-х тренерів!");
+    return;
+  }
+  
+  // Якщо тренерів взагалі немає в системі або нікого не обрали
+  if(selectedTrainers.length === 0) {
+    selectedTrainers = ["Не вказано"];
+  }
+
+  visitors.push({
+    id: Date.now(),
+    name: name,
+    surname: surname,
+    trainers: selectedTrainers,
+    freezes: []
+  });
+
+  save();
+  document.getElementById("v_name").value = "";
+  document.getElementById("v_surname").value = "";
+  renderAll();
+}
+
+  // Отримуємо вибраних тренерів з мультиселекту
   let selectedTrainers = Array.from(document.getElementById("v_trainers").selectedOptions).map(opt => opt.value);
   if(selectedTrainers.length > 2) {
     alert("Можна обрати не більше 2-х тренерів!");
