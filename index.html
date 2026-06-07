@@ -209,6 +209,7 @@ function renderTrainers(){
     trainers.map(t=>`<div style="padding:5px 0;">• ${t.name}</div>`).join("");
 }
 
+// Виправлена функція, яка не ламає код без тренерів
 function addVisitor(){
   let name = document.getElementById("v_name").value.trim();
   let surname = document.getElementById("v_surname").value.trim();
@@ -218,7 +219,6 @@ function addVisitor(){
     return;
   }
 
-  // Отримуємо вибраних тренерів з мультиселекту
   let selectEl = document.getElementById("v_trainers");
   let selectedTrainers = [];
   
@@ -231,31 +231,6 @@ function addVisitor(){
     return;
   }
   
-  // Якщо тренерів взагалі немає в системі або нікого не обрали
-  if(selectedTrainers.length === 0) {
-    selectedTrainers = ["Не вказано"];
-  }
-
-  visitors.push({
-    id: Date.now(),
-    name: name,
-    surname: surname,
-    trainers: selectedTrainers,
-    freezes: []
-  });
-
-  save();
-  document.getElementById("v_name").value = "";
-  document.getElementById("v_surname").value = "";
-  renderAll();
-}
-
-  // Отримуємо вибраних тренерів з мультиселекту
-  let selectedTrainers = Array.from(document.getElementById("v_trainers").selectedOptions).map(opt => opt.value);
-  if(selectedTrainers.length > 2) {
-    alert("Можна обрати не більше 2-х тренерів!");
-    return;
-  }
   if(selectedTrainers.length === 0) {
     selectedTrainers = ["Не вказано"];
   }
@@ -308,13 +283,11 @@ function saveFreeze(id) {
   }
 }
 
-// Перевірка чи відсутній (заморожений) у конкретну дату
 function isFrozen(v, date){
   if(!date) return false;
   return v.freezes.some(f => date >= f.from && date <= f.to);
 }
 
-// Перевірка чи закінчується заморозка у конкретну дату
 function endsOn(v, date) {
   if(!date) return false;
   return v.freezes.some(f => f.to === date);
@@ -324,18 +297,11 @@ function renderDashboardData() {
   let targetDateStr = document.getElementById("dashboardDate").value;
   if(!targetDateStr) return;
 
-  // Вираховуємо "Завтра" відносно обраної дати
-  let targetDate = new Date(targetDateStr);
-  targetDate.setDate(targetDate.getDate() + 1);
-  let tomorrowStr = targetDate.toISOString().slice(0,10);
-
-  // 1. Сортуємо та виводимо відсутніх СЬОГОДНІ (+ тренери)
   let absentList = visitors.filter(v => isFrozen(v, targetDateStr));
   document.getElementById("todayAbsent").innerHTML = absentList.length 
     ? absentList.map(v => `• ${v.name} ${v.surname} <span style="font-weight:normal; font-size:13px; color:#555;">(Тренер: ${v.trainers.join(", ")})</span>`).join("<br>")
     : "Немає відсутніх на цю дату.";
 
-  // 2. Виводимо нагадування (в кого закінчується ТОМУ ЩО ЗАВТРА вони мають бути)
   let reminderList = visitors.filter(v => endsOn(v, targetDateStr));
   document.getElementById("reminders").innerHTML = reminderList.length
     ? reminderList.map(v => ` Навчання відновиться завтра: ${v.name} ${v.surname} (Тренер: ${v.trainers.join(", ")})`).join("<br>")
@@ -354,7 +320,6 @@ function renderAll(){
   renderDashboard();
 }
 
-// Початковий рендер
 renderAll();
 </script>
 
